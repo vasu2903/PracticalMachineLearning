@@ -700,11 +700,14 @@ summary(Training)
 ##  Max.   :  672    Max.   :1480     Max.   :1090             
 ## 
 ```
-
-Some variable have near Zero variance which indicates that they do not contribute (enough) to the model. They are removed from the set using.
+Since we are very particullar about in variables that predict the movement The set contains a number of variables , cvtd_timestamp is removed because it is a factor instead of a numeric value .
+And also some variable have near Zero variance which indicates that they do not contribute (enough) to the model. They are removed from the set using.
 
 
 ```r
+rIndex <- grep("X|user_name|cvtd_timestamp", names(Training))
+Training <- Training[, -rIndex]
+
 Near_Zero_val <- nearZeroVar(Training)
 
 Training <- Training[-Near_Zero_val]
@@ -720,7 +723,7 @@ NAs <- apply(Training, 2, function(x) {
 Training <- Training[, which(NAs == 0)]
 ```
 
-Partition training data provided into two sets. One for training and one for cross validation.
+Partition training data provided into two sets. One for training and one for cross validation. Since the actual training  size is large , I have created a smaller training set of 80% of the original set. 
 
 ```r
 parTraining <- createDataPartition(Training$classe, p=0.20, list=FALSE)
@@ -752,7 +755,7 @@ mod_tree
 ## CART 
 ## 
 ## 3927 samples
-##   58 predictor
+##   55 predictor
 ##    5 classes: 'A', 'B', 'C', 'D', 'E' 
 ## 
 ## No pre-processing
@@ -762,13 +765,13 @@ mod_tree
 ## 
 ## Resampling results across tuning parameters:
 ## 
-##   cp   Accuracy  Kappa  Accuracy SD  Kappa SD
-##   0.2  0.7       0.7    0.09         0.1     
-##   0.3  0.6       0.4    0.09         0.1     
-##   0.3  0.4       0.2    0.09         0.2     
+##   cp    Accuracy  Kappa  Accuracy SD  Kappa SD
+##   0.03  0.6       0.42   0.04         0.06    
+##   0.06  0.4       0.17   0.05         0.09    
+##   0.12  0.3       0.06   0.05         0.06    
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was cp = 0.2437.
+## The final value used for the model was cp = 0.03451.
 ```
 
 ```r
@@ -777,9 +780,9 @@ round(max(results$Accuracy), 4) * 100
 ```
 
 ```
-## [1] 74.13
+## [1] 55.11
 ```
-Execution  train() function take little bit time, for me it took nearly 20 to 25 mins. From the result accuracy of the mode is 74%.
+Execution  train() function take little bit time, for me it took nearly 20 to 25 mins. From the result accuracy of the mode is 55% , which is very low.
 To get more clarity and accuracy by creating model using Random forest:
 
 ```r
@@ -807,10 +810,10 @@ round(max(results$Accuracy), 4) * 100
 ```
 
 ```
-## [1] 99.92
+## [1] 98.7
 ```
 
-Using Random Forest model accuracy is 99% which is more higer than the first single tree Model.
+Using Random Forest model accuracy is 98.7%  which is more higer than the first single tree Model.
 
 ## Cross-validation
 
@@ -826,11 +829,11 @@ table(pred, sub_validat$classe)
 ```
 ##     
 ## pred    A    B    C    D    E
-##    A 4464    4    0    0    0
-##    B    0 3033    1    0    0
-##    C    0    0 2736    0    0
-##    D    0    0    0 2569    0
-##    E    0    0    0    3 2885
+##    A 4464   33    0    0    9
+##    B    0 2989   17    0    1
+##    C    0   15 2713   27    0
+##    D    0    0    7 2542   16
+##    E    0    0    0    3 2859
 ```
 
 As expected the predictions are not correct in all cases. We can calculate the accuracy of the prediction by using
@@ -842,9 +845,9 @@ accpred
 
 ```
 ## Accuracy    Kappa 
-##   0.9995   0.9994
+##   0.9918   0.9897
 ```
-The prediction fitted the test set even slightly better than the previous one: 99.99%
+The prediction fitted the test set even slightly better than the previous one: 99%
 
 Expected out of sample error
 
@@ -860,33 +863,33 @@ cfM
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 4464    4    0    0    0
-##          B    0 3033    1    0    0
-##          C    0    0 2736    0    0
-##          D    0    0    0 2569    0
-##          E    0    0    0    3 2885
+##          A 4464   33    0    0    9
+##          B    0 2989   17    0    1
+##          C    0   15 2713   27    0
+##          D    0    0    7 2542   16
+##          E    0    0    0    3 2859
 ## 
 ## Overall Statistics
-##                                     
-##                Accuracy : 0.999     
-##                  95% CI : (0.999, 1)
-##     No Information Rate : 0.284     
-##     P-Value [Acc > NIR] : <2e-16    
-##                                     
-##                   Kappa : 0.999     
-##  Mcnemar's Test P-Value : NA        
+##                                        
+##                Accuracy : 0.992        
+##                  95% CI : (0.99, 0.993)
+##     No Information Rate : 0.284        
+##     P-Value [Acc > NIR] : <2e-16       
+##                                        
+##                   Kappa : 0.99         
+##  Mcnemar's Test P-Value : NA           
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity             1.000    0.999    1.000    0.999    1.000
-## Specificity             1.000    1.000    1.000    1.000    1.000
-## Pos Pred Value          0.999    1.000    1.000    1.000    0.999
-## Neg Pred Value          1.000    1.000    1.000    1.000    1.000
+## Sensitivity             1.000    0.984    0.991    0.988    0.991
+## Specificity             0.996    0.999    0.997    0.998    1.000
+## Pos Pred Value          0.991    0.994    0.985    0.991    0.999
+## Neg Pred Value          1.000    0.996    0.998    0.998    0.998
 ## Prevalence              0.284    0.194    0.174    0.164    0.184
-## Detection Rate          0.284    0.193    0.174    0.164    0.184
-## Detection Prevalence    0.285    0.193    0.174    0.164    0.184
-## Balanced Accuracy       1.000    0.999    1.000    0.999    1.000
+## Detection Rate          0.284    0.190    0.173    0.162    0.182
+## Detection Prevalence    0.287    0.192    0.176    0.163    0.182
+## Balanced Accuracy       0.998    0.991    0.994    0.993    0.995
 ```
 The confusionMatrix function from the Caret package does provide all the information that we calculated 'by hand' in the first part of the Cross-validation. 
 It shows that both methods provide the same answer.The model achieves the perfect 100% accuracy on the limited "testing set"

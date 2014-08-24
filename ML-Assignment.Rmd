@@ -28,10 +28,13 @@ sum(complete.cases(Training))
 head(Training)
 summary(Training)
 ```
-
-Some variable have near Zero variance which indicates that they do not contribute (enough) to the model. They are removed from the set using.
+Since we are very particullar about in variables that predict the movement The set contains a number of variables , cvtd_timestamp is removed because it is a factor instead of a numeric value .
+And also some variable have near Zero variance which indicates that they do not contribute (enough) to the model. They are removed from the set using.
 
 ```{r}
+
+rIndex <- grep("X|user_name|cvtd_timestamp", names(Training))
+Training <- Training[, -rIndex]
 
 Near_Zero_val <- nearZeroVar(Training)
 
@@ -48,7 +51,7 @@ NAs <- apply(Training, 2, function(x) {
 Training <- Training[, which(NAs == 0)]
 ```
 
-Partition training data provided into two sets. One for training and one for cross validation.
+Partition training data provided into two sets. One for training and one for cross validation. Since the actual training  size is large , I have created a smaller training set of 80% of the original set. 
 ```{r}
 parTraining <- createDataPartition(Training$classe, p=0.20, list=FALSE)
 sub_train <- Training[parTraining,]
@@ -64,7 +67,7 @@ mod_tree
 results <- mod_tree$results
 round(max(results$Accuracy), 4) * 100
 ```
-Execution  train() function take little bit time, for me it took nearly 20 to 25 mins. From the result accuracy of the mode is 74%.
+Execution  train() function take little bit time, for me it took nearly 20 to 25 mins. From the result accuracy of the mode is 55% , which is very low.
 To get more clarity and accuracy by creating model using Random forest:
 ```{r}
 train_ctrl <- trainControl(method = "cv", number = 4, allowParallel = TRUE)
@@ -75,7 +78,7 @@ results <- mod_tree$results
 round(max(results$Accuracy), 4) * 100
 ```
 
-Using Random Forest model accuracy is 99% which is more higer than the first single tree Model.
+Using Random Forest model accuracy is 98.7%  which is more higer than the first single tree Model.
 
 ## Cross-validation
 
@@ -92,7 +95,7 @@ As expected the predictions are not correct in all cases. We can calculate the a
 accpred <- postResample(pred, sub_validat$classe)
 accpred
 ```
-The prediction fitted the test set even slightly better than the previous one: 99.99%
+The prediction fitted the test set even slightly better than the previous one: 99%
 
 Expected out of sample error
 
