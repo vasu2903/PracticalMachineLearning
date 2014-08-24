@@ -1,0 +1,121 @@
+Prediction of Weight Lifting Style using Accelerometer Data
+============================================================
+By Vasudevan Santhanam
+
+## Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this paper, will be to use data from accelerometers Data.
+
+## Data Loading
+The training data for this project are available in :  
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv  . 
+
+The test data are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+I have downloaded the files into my  working directory and load it from there.
+
+```{r}
+library(caret)
+set.seed(12345)
+Training <- read.csv("pml-training.csv", na.strings = c("NA", ""))
+Testing <- read.csv("pml-testing.csv", na.strings = c("NA", ""))
+```
+To Understand the data
+```{r}
+dim(Training)
+sum(complete.cases(Training))
+head(Training)
+summary(Training)
+```
+
+Some variable have near Zero variance which indicates that they do not contribute (enough) to the model. They are removed from the set using.
+
+```{r}
+
+Near_Zero_val <- nearZeroVar(Training)
+
+Training <- Training[-Near_Zero_val]
+
+```
+
+A number of variable contain (a lot of) NA's. We need to remove them for faster execution:
+```{r}
+NAs <- apply(Training, 2, function(x) {
+  sum(is.na(x))
+})
+
+Training <- Training[, which(NAs == 0)]
+```
+
+Partition training data provided into two sets. One for training and one for cross validation.
+```{r}
+parTraining <- createDataPartition(Training$classe, p=0.20, list=FALSE)
+sub_train <- Training[parTraining,]
+sub_validat <- Training[-parTraining,]
+```
+## Model
+
+We can now create a model based on the pre-processed data set. First we will create a  model by fitting single tree:
+```{r}
+mod_tree <- train(sub_train$classe ~ ., data = sub_train, method = "rpart")
+
+mod_tree
+results <- mod_tree$results
+round(max(results$Accuracy), 4) * 100
+```
+Execution  train() function take little bit time, for me it took nearly 20 to 25 mins. From the result accuracy of the mode is 74%.
+To get more clarity and accuracy by creating model using Random forest:
+```{r}
+train_ctrl <- trainControl(method = "cv", number = 4, allowParallel = TRUE)
+mod_tree <- train(sub_train$classe ~ ., data = sub_train, method = "rf", 
+                prof = TRUE, trControl = train_ctrl)
+
+results <- mod_tree$results
+round(max(results$Accuracy), 4) * 100
+```
+
+Using Random Forest model accuracy is 99% which is more higer than the first single tree Model.
+
+## Cross-validation
+
+Now we use the mod_tree to predict new values within the test set that we created for cross-validation.
+
+```{r}
+pred <- predict(mod_tree, sub_validat)
+sub_validat$predRight <- pred == sub_validat$classe
+table(pred, sub_validat$classe)
+```
+
+As expected the predictions are not correct in all cases. We can calculate the accuracy of the prediction by using
+```{r}
+accpred <- postResample(pred, sub_validat$classe)
+accpred
+```
+The prediction fitted the test set even slightly better than the previous one: 99.99%
+
+Expected out of sample error
+
+Using confusionMatrix method we can calculate the expected out of sample error based on the test set that we created for cross-validation
+```{r}
+cfM <- confusionMatrix(pred, sub_validat$classe)
+cfM
+```
+The confusionMatrix function from the Caret package does provide all the information that we calculated 'by hand' in the first part of the Cross-validation. 
+It shows that both methods provide the same answer.The model achieves the perfect 100% accuracy on the limited "testing set"
+provided by the course staff.
+
+## Conclusion
+
+Given that the model obtained using the initial approach appears to be highly
+successful by all available measures, further exploration of the matter does
+not seem to be necessary.
+
+## References
+
+1. Random forests. Machine learning, 45(1), 5-32.
+
+
+
+
+
